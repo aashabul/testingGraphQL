@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const {
@@ -69,5 +70,14 @@ module.exports = {
       throw new AuthenticationError("Error signing in");
     }
     return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+  },
+  newNote: async (parent, args, { models, user }) => {
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to create a note");
+    }
+    return await models.Note.create({
+      content: args.content,
+      author: mongoose.Types.ObjectId(user.id),
+    });
   },
 };
