@@ -80,4 +80,77 @@ module.exports = {
       author: mongoose.Types.ObjectId(user.id),
     });
   },
+  deleteNote: async (parent, { id }, { models, user }) => {
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to delete a note");
+    }
+    const note = await models.Note.findById(id);
+    if (note && String(note.author) !== user.id) {
+      throw new ForbiddenError("You don't have permission to delete the note");
+    }
+    try {
+      await note.remove();
+      return true;
+    } catch (err) {
+      return false;
+    }
+  },
+  updateNote: async (parent, { content, id }, { models, user }) => {
+    if (!user) {
+      throw new AuthenticationError("You must be signed in to update a note");
+    }
+    const note = await models.Note.findById(id);
+    if (note && String(note.author) !== user.id) {
+      throw new ForbiddenError("You don't have permission to update the note");
+    }
+    return await models.Note.FindOneAndUpdate(
+      {
+        _id: id,
+      },
+      {
+        $set: {
+          content,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+  },
+  toggleFavorite: async (parent, { id }, { models, user }) => {
+    if (!user) {
+      throw new AuthenticationError();
+    }
+    let noteCheck = await models.Note.findById(id);
+    const hasUser = noteCheck.favoritedBy.indexOf(user.id);
+    if (hasUser >= 0) {
+      return await models.Note.findByIdAndUpdate(
+        id,
+        {
+          $pull: {
+            favoritedBy: mongoose.Types.ObjectId(user.id),
+          },
+          $inc: {
+            favoriteCount: -1,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+    } else {
+      return await models.Note.findByIdAndUpdate(
+        id,
+        {
+          $push: {
+            favoritedBy: mongoose.Types.ObjectId(user.id),
+          },
+          $inc: {
+            favoriteCount: 1,
+          },
+        },
+        { new: true }
+      );
+    }
+  },
 };
