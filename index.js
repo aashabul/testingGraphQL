@@ -1,4 +1,7 @@
 const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+
 const { ApolloServer } = require("apollo-server-express");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -22,6 +25,13 @@ const port = process.env.PORT || 2000;
 const DB_HOST = process.env.DB_HOST;
 
 const app = express();
+// app.use(helmet());
+app.use(
+  helmet.contentSecurityPolicy({
+    reportOnly: true,
+  })
+);
+app.use(cors());
 
 db.connect(DB_HOST);
 
